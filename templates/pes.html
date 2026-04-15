@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        <h1>PES!</h1>
+        <p>
+            Jmeno: {{jmeno}}
+        </p>
+        <ul>
+            {%for jmeno_psa in jmena_psu %}
+            <li>{{jmeno_psa}}</li>
+            {%endfor%}
+        </ul>
+        <form method="POST">
+            <label>Zadej jmeno psa:</label>
+            <input type="text" name="jmeno">
+            <input type="submit" value="Odeslat">
+        </form>
+    </body>
+</html>
