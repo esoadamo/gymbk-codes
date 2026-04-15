@@ -1,11 +1,18 @@
 from flask import Flask, render_template
 
 app = Flask("jmena psu")
+pocitadlo = 0
 
 @app.route('/')
 def uvoka():
+    global pocitadlo
     # Pes.html ve slozce templates
-    return render_template("pes.html")
+    pocitadlo += 1
+    return render_template(
+        "pocitadlo.html",
+        jmeno="Baryk",
+        pocitadlo=pocitadlo
+    )
 
 
 if __name__ == "__main__":
