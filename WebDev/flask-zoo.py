@@ -1,5 +1,12 @@
-from flask import Flask, render_template, request, send_from_directory, redirect, url_for
+from flask import Flask, render_template, request, send_from_directory, redirect, url_for, jsonify
 from typing import TypedDict, List
+import os
+import requests
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 app = Flask("zoo")
 
@@ -7,6 +14,11 @@ app = Flask("zoo")
 class Comment(TypedDict):
     comment: str
     name: str | None
+
+
+class ChatMessage(TypedDict):
+    role: str
+    content: str
 
 
 class Database(TypedDict):
@@ -50,6 +62,50 @@ def donate():
         })
     
     return redirect(url_for('index'))
+
+
+@app.route('/chatbot', methods=['POST'])
+def chatbot():
+    user_message = request.form.get('message', '')
+    chat_history = request.form.get('history', '[]')
+    
+    if not user_message:
+        return jsonify({"error": "No message provided"}), 400
+    
+    # Render the current page to string for context
+    page_context = render_template("zoo.html", total_amount=DATABASE["total_amount"], comments=DATABASE["comments"])
+    
+    # Prepare the full context for Mistral API
+    context = f"Page context:\n{page_context}\n\nChat history:\n{chat_history}\n\nUser's new question: {user_message}"
+    
+    # Call Mistral API
+    mistral_api_key = os.getenv('MISTRAL_API_KEY')
+    if not mistral_api_key:
+        return jsonify({"error": "Mistral API key not configured"}), 500
+    
+    try:
+        response = requests.post(
+            "https://api.mistral.ai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {mistral_api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "mistral-tiny",
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant for a Zoo donation website. Answer questions based on the provided context about the page."},
+                    {"role": "user", "content": context}
+                ]
+            }
+        )
+
+        response.raise_for_status()
+        bot_reply = response.json()['choices'][0]['message']['content']
+        
+        return jsonify({"reply": bot_reply})
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
