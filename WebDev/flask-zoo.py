@@ -1,9 +1,15 @@
 from flask import Flask, render_template, request, send_from_directory, redirect, url_for, jsonify
 from typing import TypedDict, List
 import os
-import requests
 
-from dotenv import load_dotenv
+try:
+    import requests
+    from dotenv import load_dotenv
+except ImportError as e:
+    print("Chybi vam balicky", e)
+    print("Doinstalujte je pomoci pip install requests python-dotenv")
+    print("Nebo uv add requests python-dotenv")
+    exit(1)
 
 load_dotenv()
 
@@ -34,7 +40,12 @@ DATABASE: Database = {
 
 @app.route('/')
 def index():
-    return render_template("zoo.html", total_amount=DATABASE["total_amount"], comments=DATABASE["comments"])
+    return render_template(
+        "zoo.html",
+        total_amount=DATABASE["total_amount"],
+        comments=DATABASE["comments"],
+        url=request.url
+    )
 
 
 @app.route('/assets/<path:filename>')
